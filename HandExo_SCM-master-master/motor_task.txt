@@ -1,0 +1,20 @@
+while(1)
+{
+	force = force_sensor();
+
+	TM_calc(&TM, angle);
+    	
+	jacobe(&TMJ, angle);
+
+	torch_des = TMJ.J1_1 * force[0] + TMJ.J2_1 * force[1] + TMJ.J3_1 * force[2];
+
+	// 由于直接使用torch_des会导致Output的计算总是差一半，因此将torch_des 变为两倍使用
+	torch_desA = 2 * (torch_des + gravity_torch() );                              
+
+	// 仍未解决第一关节力矩传感的问题
+ 	pid_calc(&pid, torch_desA, torch_sensor);
+
+	Output = pid_getPIDOutput(&pid);
+
+	TIM_SetCompare(TIM14, (int) Output);
+}

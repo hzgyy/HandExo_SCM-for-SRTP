@@ -180,4 +180,4 @@ float GetTorch(Jacobe J, FT transFT)
 	float torch;
 	torch = J.d1*transFT.fx + J.d2*transFT.fy + J.d3*transFT.fz + J.r1*transFT.tx + J.r2*transFT.ty + J.r3*transFT.tz;
 	return torch;
-}
+}	

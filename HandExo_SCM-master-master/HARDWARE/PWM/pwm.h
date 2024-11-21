@@ -16,4 +16,8 @@ void PWM_SetCompareMid(void);
 void PWM_SetCompareHigh(void); 
 
 void PWM_SetCompare( u8 ch,u16 count);
+
+void TIM1_PWM_Init(void);
+
+void Set_TIM1_PWM_DutyCycle(uint16_t channel1_duty, uint16_t channel2_duty, uint16_t channel3_duty);
 #endif

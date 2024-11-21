@@ -49,6 +49,77 @@ void motor_v(int v)
 	TIM_SetCompare1(TIM3, v);
 }
 
+void TIM1_PWM_Init(void) {
+		GPIO_InitTypeDef GPIO_InitStruct;
+		TIM_TimeBaseInitTypeDef TIM_TimeBaseStruct;
+		TIM_OCInitTypeDef TIM_OCInitStruct;
+		
+    // 1. 启用GPIOA和TIM1的时钟
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
+
+    // 2. 配置GPIO引脚
+    
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;        // 复用功能
+    GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;      // 推挽输出
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;    // 无上下拉
+    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;   // 速度50MHz
+
+    // 配置PA8为TIM1_CH1
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_8;
+    GPIO_Init(GPIOA, &GPIO_InitStruct);
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource8, GPIO_AF_TIM1);
+
+    // 配置PA9为TIM1_CH2
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_9;
+    GPIO_Init(GPIOA, &GPIO_InitStruct);
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_TIM1);
+
+    // 配置PA10为TIM1_CH3
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_10;
+    GPIO_Init(GPIOA, &GPIO_InitStruct);
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_TIM1);
+
+    // 3. 配置TIM1的PWM输出
+    // 定时器基础配置
+    TIM_TimeBaseStruct.TIM_Period = 999;                      // 自动重装载值（周期）
+    TIM_TimeBaseStruct.TIM_Prescaler = 83;                    // 预分频器
+    TIM_TimeBaseStruct.TIM_ClockDivision = TIM_CKD_DIV1;      // 时钟分频
+    TIM_TimeBaseStruct.TIM_CounterMode = TIM_CounterMode_Up;  // 向上计数模式
+    TIM_TimeBaseInit(TIM1, &TIM_TimeBaseStruct);
+
+    // 通道1（TIM1_CH1）配置
+    TIM_OCInitStruct.TIM_OCMode = TIM_OCMode_PWM1;            // PWM模式1
+    TIM_OCInitStruct.TIM_OutputState = TIM_OutputState_Enable;
+    TIM_OCInitStruct.TIM_OutputNState = TIM_OutputNState_Disable; // 禁用互补输出
+    TIM_OCInitStruct.TIM_Pulse = 0;                         // 占空比50%
+    TIM_OCInitStruct.TIM_OCPolarity = TIM_OCPolarity_High;    // 高电平有效
+    TIM_OC1Init(TIM1, &TIM_OCInitStruct);
+
+    // 通道2（TIM1_CH2）配置
+    TIM_OCInitStruct.TIM_Pulse = 0;                         // 占空比25%
+    TIM_OC2Init(TIM1, &TIM_OCInitStruct);
+
+    // 通道3（TIM1_CH3）配置
+    TIM_OCInitStruct.TIM_Pulse = 0;                         // 占空比75%
+    TIM_OC3Init(TIM1, &TIM_OCInitStruct);
+
+    // 4. 启动TIM1
+    TIM_Cmd(TIM1, ENABLE);
+
+    // 使能TIM1的主输出（MOE位），高级定时器需要
+    TIM_CtrlPWMOutputs(TIM1, ENABLE);
+}
+
+void Set_TIM1_PWM_DutyCycle(uint16_t channel1_duty, uint16_t channel2_duty, uint16_t channel3_duty) {
+    // 设置 TIM1 通道1 的占空比
+    TIM_SetCompare1(TIM1, channel1_duty);  // 设置通道1（PA8）的CCR1值
+    // 设置 TIM1 通道2 的占空比
+    TIM_SetCompare2(TIM1, channel2_duty);  // 设置通道2（PA9）的CCR2值
+    // 设置 TIM1 通道3 的占空比
+    TIM_SetCompare3(TIM1, channel3_duty);  // 设置通道3（PA10）的CCR3值
+}
+
 
 void TIM14_PWM_Init(uint32_t arr, uint32_t psc)
 {
@@ -69,7 +140,17 @@ void TIM14_PWM_Init(uint32_t arr, uint32_t psc)
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
     GPIO_Init(GPIOF, &GPIO_InitStructure);
+	
+		
     
+		//pwm正反转控制初始化
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;  
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;  
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP; // 推挽输出  
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz; // 100 MHz  
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL; // 无上下拉  
+    GPIO_Init(GPIOF, &GPIO_InitStructure);
+		
     TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
     TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInitStructure.TIM_Period = arr;
@@ -93,6 +174,7 @@ void TIM14_PWM_Init(uint32_t arr, uint32_t psc)
     
     TIM_Cmd(TIM14, ENABLE); //使能TIM14
 }
+
 
 
 void PWM_SetCompareLow(void) 

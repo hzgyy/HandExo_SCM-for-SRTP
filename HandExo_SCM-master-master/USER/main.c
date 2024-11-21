@@ -327,8 +327,21 @@ void motor_task(void *pdata)
 	
 	PID pid;
 	
-	float torch_des, OutPut;
+	float torch_des, OutPut = 400;
 	float allegro_torch = 8;
+	
+	// new pid parameters
+	float des_force = 2.5;
+	float err_force = 0;
+	float err_int = 0;
+	float kp2 = 0;
+	float ki2 = 10;
+	float kd3 = 0;
+	float out_p = 0;
+	float out_i = 0;
+	float out_d = 0;
+	float err_prev = 0;
+	int flag = 1;
 	
 	float R0 = 10,R_R;
 	float force_sen; 
@@ -372,12 +385,26 @@ void motor_task(void *pdata)
 		printf("force_sen: %.4f @N\n", force_sen);
 		printf("****************************************\n\n");
 
+		//direct PID
+		err_force = des_force-force_sen;
+		err_int += err_force;
+		out_d = kd3*(err_force-err_prev);
+		out_p = kp2*err_force;
+		out_i = ki2*err_int;
+		if(out_i > 500)
+			out_i = 500;
+		else if(out_i < -400)
+			out_i = -400;
+		//OutPut = out_p+out_i;
+		err_prev = err_force;
 		/////////////////////////////////
+		/*
 		oriFt.fz = -force_sen;                        
 		TransFt = TransFT(TM, oriFt);                 // get the transfered force
 		J1 = GetJacobe(&TM);
 		torch_des = GetTorch(J1, TransFt);
 		torch_des = fabs(torch_des);
+		
 		/////////////////////////////////
 
 		printf("Generallized force: %.4f N,%.4f N, %.4f N \n", TransFt.fx, TransFt.fy, TransFt.fz);
@@ -394,8 +421,21 @@ void motor_task(void *pdata)
 		OutPut = OutPut<350?350:OutPut;
 //		printf("gravity_torch: %.4f\n", gravity_torch());
 		printf("output: %.4f\n\n", OutPut);
-		
-
+		*/
+		if(KEY_Scan(0) == 3){
+			OutPut -= 50;
+		}
+		printf("output: %.4f,des_out = %.4f\n", OutPut,des_force);
+		printf("outp: %.4f, out_i = %.4f,out_d = %.4f\n", out_p,out_i,out_d);
+		//output
+		if (OutPut >= 0) {   
+        GPIO_SetBits(GPIOF, GPIO_Pin_6);  
+        GPIO_ResetBits(GPIOF, GPIO_Pin_7);  
+    } else {  
+        GPIO_ResetBits(GPIOF, GPIO_Pin_6);  
+        GPIO_SetBits(GPIOF, GPIO_Pin_7); 
+				OutPut = -OutPut;
+    }
 		TIM_SetCompare1(TIM14, (int)OutPut);
 		OSTimeDlyHMSM(0,0,0,5);
 	}
